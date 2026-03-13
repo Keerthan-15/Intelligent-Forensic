@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom"
+    style="border-color: var(--border-color) !important;">
+    <h1 class="h2 text-light">All Monitored Events</h1>
+</div>
+
+<div class="card bg-darker shadow-lg border-0 rounded-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-dark mb-0 align-middle">
+                <thead class="bg-dark text-muted fw-bold text-uppercase small" style="letter-spacing: 0.5px;">
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Timestamp</th>
+                        <th>Type</th>
+                        <th style="width: 100px;">Risk</th>
+                        <th>Source</th>
+                        <th>Description</th>
+                        <th class="pe-4 text-end">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ev in events %}
+                    <tr class="border-bottom border-secondary" style="border-color: var(--border-color) !important;">
+                        <td class="ps-4 text-secondary">#{{ ev.id }}</td>
+                        <td><span class="font-monospace small">{{ ev.timestamp[:19].replace('T', ' ') }}</span></td>
+                        <td>
+                            {% if ev.event_type == 'PROCESS' %}
+                            <span class="badge bg-primary text-white"><i class="fas fa-microchip me-1"></i>
+                                PROCESS</span>
+                            {% elif ev.event_type == 'FILE' %}
+                            <span class="badge bg-info text-dark"><i class="fas fa-file-alt me-1"></i> FILE</span>
+                            {% elif ev.event_type == 'AUTH' %}
+                            <span class="badge bg-warning text-dark"><i class="fas fa-user-lock me-1"></i> AUTH</span>
+                            {% elif ev.event_type == 'USB' %}
+                            <span class="badge bg-success text-white"><i class="fab fa-usb me-1"></i> USB</span>
+                            {% else %}
+                            <span class="badge bg-secondary text-light">{{ ev.event_type }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="progress border border-secondary"
+                                style="height: 8px; background-color: rgba(255,255,255,0.05);">
+                                <div class="progress-bar {% if ev.risk_score > 75 %}bg-danger{% elif ev.risk_score > 40 %}bg-warning{% else %}bg-success{% endif %}"
+                                    role="progressbar" style="width: {{ ev.risk_score }}%"></div>
+                            </div>
+                        </td>
+                        <td><span class="text-light" style="font-size: 0.9em;">{{ ev.source }}</span></td>
+                        <td><small class="text-muted">{{ ev.description }}</small></td>
+                        <td class="pe-4 text-end">
+                            {% if ev.is_anomaly %}
+                            <span class="badge bg-danger text-white"><i class="fas fa-exclamation-triangle me-1"></i>
+                                Anomaly</span>
+                            {% else %}
+                            <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i> Normal</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="fas fa-shield-alt fa-3x mb-3 opacity-50"></i>
+                            <h5 class="fw-light">No events found</h5>
+                            <small>System log is currently empty.</small>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

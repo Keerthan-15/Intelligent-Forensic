@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+    <h1 class="h3 fw-bold text-danger">
+        <i class="fas fa-radiation-alt me-2 text-danger fade-in"></i> Critical Anomalies
+    </h1>
+    <div>
+        <span class="badge bg-danger rounded-pill px-3 py-2 fs-6 shadow-sm">
+            <i class="fas fa-bell me-1"></i> {{ events|length }} Active Alerts
+        </span>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for ev in events %}
+    <div class="col-md-6 col-lg-4 mb-2">
+        <div class="card h-100 anomaly-card bg-darker border-0 shadow-lg position-relative overflow-hidden"
+            style="transition: all 0.3s ease; border-radius: 16px;">
+            <!-- Top Alert Bar -->
+            <div class="position-absolute top-0 start-0 w-100"
+                style="height: 4px; background: linear-gradient(90deg, #ef4444, #f97316);"></div>
+
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title text-light fw-bold mb-0">
+                        <i class="fas fa-exclamation-triangle text-warning me-2"></i> ID #{{ ev.id }}
+                    </h5>
+                    <span class="badge bg-danger fw-bold rounded-pill px-3"
+                        style="font-size: 0.85em; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);">
+                        Risk Score: {{ "%.1f"|format(ev.risk_score) }}
+                    </span>
+                </div>
+
+                <h6 class="text-muted mb-4 pb-3 border-bottom border-secondary font-monospace"
+                    style="font-size: 0.85rem;">
+                    <i class="far fa-clock me-1"></i> {{ ev.timestamp[:19].replace('T', ' ') }}
+                    <span class="mx-2">|</span>
+                    <span class="badge bg-dark border border-secondary text-primary">{{ ev.event_type }}</span>
+                </h6>
+
+                <p class="card-text text-light opacity-75 mb-4" style="font-size: 0.95rem; line-height: 1.6;">
+                    {{ ev.description }}
+                </p>
+
+                <div class="bg-black bg-opacity-50 p-3 rounded-3 mb-4 border border-secondary"
+                    style="font-family: monospace; font-size: 0.8em; word-break: break-all;">
+                    <div class="mb-2">
+                        <span class="text-muted fw-bold d-block mb-1 text-uppercase"
+                            style="letter-spacing: 1px; font-size: 0.7rem;">Source</span>
+                        <span class="text-info">{{ ev.source }}</span>
+                    </div>
+                    <div>
+                        <span class="text-muted fw-bold d-block mb-1 text-uppercase mt-2"
+                            style="letter-spacing: 1px; font-size: 0.7rem;">Evidence Hash (SHA-256)</span>
+                        <span class="text-primary opacity-75">{{ ev.hash_value[:32] }}...</span>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center mt-auto">
+                    <button class="btn btn-outline-danger btn-sm rounded-pill verify-btn px-4 fw-bold"
+                        data-id="{{ ev.id }}" style="transition: all 0.3s ease;">
+                        <i class="fas fa-fingerprint me-1"></i> Verify Origin
+                    </button>
+                    <span class="verify-status ms-3 font-monospace small fw-bold"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5 my-5">
+        <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-circle mb-4"
+            style="width: 120px; height: 120px;">
+            <i class="fas fa-check-circle fa-4x mb-0"></i>
+        </div>
+        <h3 class="fw-bold text-light mb-2">System Secure</h3>
+        <p class="text-muted fs-5">No critical anomalies or suspicious activities detected.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll('.verify-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const button = e.currentTarget;
+            const id = button.dataset.id;
+            const statusSpan = button.nextElementSibling;
+
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Verifying...';
+            button.disabled = true;
+            statusSpan.innerHTML = '';
+
+            try {
+                const res = await fetch(`/api/verify/${id}`, { method: 'POST' });
+                const data = await res.json();
+
+                button.style.display = 'none';
+
+                if (data.verified) {
+                    statusSpan.innerHTML = '<span class="text-success"><i class="fas fa-shield-check me-1"></i> Integrity Verified</span>';
+                    statusSpan.classList.add('fade-in');
+                } else {
+                    statusSpan.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i> Integrity Compromised</span>';
+                    statusSpan.classList.add('fade-in');
+                }
+            } catch (err) {
+                button.innerHTML = '<i class="fas fa-redo me-1"></i> Retry Verify';
+                button.disabled = false;
+                statusSpan.innerHTML = '<span class="text-warning small"><i class="fas fa-exclamation-triangle me-1"></i> Connection Error</span>';
+            }
+        });
+    });
+</script>
+<style>
+    .anomaly-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4) !important;
+        border-color: rgba(239, 68, 68, 0.3) !important;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}

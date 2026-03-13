@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Threat Intelligence Dashboard</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card stat-card text-white bg-primary mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Total Monitored Events</h5>
+                <h2 class="card-text" id="total_events">{{ stats.total_events }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card text-white bg-danger mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Anomalies Detected</h5>
+                <h2 class="card-text" id="total_anomalies">{{ stats.total_anomalies }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card text-white bg-warning mb-3">
+            <div class="card-body">
+                <h5 class="card-title">High Risk Processes</h5>
+                <h2 class="card-text" id="process_cnt">{{ stats.process_cnt }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card text-white bg-info mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Failed Logins</h5>
+                <h2 class="card-text" id="auth_cnt">{{ stats.auth_cnt }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Event Distribution (Last 24h)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="eventsChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Threat Vectors</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="vectorsChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Event Distribution Timeline (Mock Data for Viz)
+        const ctx = document.getElementById('eventsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                datasets: [{
+                    label: 'Normal Events',
+                    data: [65, 59, 80, 81, 56, 55, 40],
+                    borderColor: '#3498db',
+                    tension: 0.1
+                }, {
+                    label: 'Anomalies',
+                    data: [2, 1, 10, 5, 20, 3, 1],
+                    borderColor: '#e74c3c',
+                    tension: 0.1
+                }]
+            },
+            options: { responsive: true }
+        });
+
+        // Threat Vectors Chart
+        const ctx2 = document.getElementById('vectorsChart').getContext('2d');
+
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Process', 'File System', 'Authentication', 'USB/Hardware'],
+                datasets: [{
+                    data: [
+                        "{{ stats.process_cnt }}",
+                        "{{ stats.file_cnt }}",
+                        "{{ stats.auth_cnt }}",
+                        "{{ stats.usb_cnt }}"
+                    ],
+                    backgroundColor: ['#f1c40f', '#3498db', '#e74c3c', '#2ecc71']
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+    });
+</script>
+{% endblock %}
